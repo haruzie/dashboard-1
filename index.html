@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Network Performance Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#1D4ED8',
+                        'secondary-gray': '#F3F4F6',
+                        'accent-red': '#DC2626',
+                        'accent-green': '#10B981',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F9FAFB;
+            min-height: 100vh;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #D1D5DB;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #9CA3AF;
+        }
+    </style>
+</head>
+<body class="font-sans">
+
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-white shadow-md sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center">
+                <h1 class="text-2xl font-extrabold text-primary-blue tracking-tight mb-2 sm:mb-0">
+                    Predictive Network Performance Dashboard
+                </h1>
+            </div>
+        </header>
+
+        <nav class="bg-secondary-gray sticky top-16 z-10 shadow-inner">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex space-x-1 sm:space-x-4 overflow-x-auto">
+                    <button class="nav-tab py-3 px-4 text-sm font-medium border-b-2 border-primary-blue text-primary-blue whitespace-nowrap transition duration-150" data-page="overview">1. Network Overview</button>
+                    <button class="nav-tab py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-primary-blue hover:border-primary-blue whitespace-nowrap transition duration-150" data-page="trends">2. Performance Trends</button>
+                    <button class="nav-tab py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-primary-blue hover:border-primary-blue whitespace-nowrap transition duration-150" data-page="reliability">3. Reliability & Stability</button>
+                    <button class="nav-tab py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-primary-blue hover:border-primary-blue whitespace-nowrap transition duration-150" data-page="forecasting">4. Predictive Modeling</button>
+                    <button class="nav-tab py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-primary-blue hover:border-primary-blue whitespace-nowrap transition duration-150" data-page="recommendations">5. Optimization Suggestions</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div id="dashboard-content">
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const rawData = [
+            { year: 1, topology: 'Star', avgDevices: 105, bndPerDept: 1, totalBandwidth: 300, normalDis: 1, worstDis: 1, avgRepair: 32, worstRepair: 32, downtime: 28, alternative: 'Data Backup', operational: 'heavy', latency: 100, peakUsage: 50, packetLoss: 0.5 },
+            { year: 2, topology: 'Star', avgDevices: 110, bndPerDept: 1, totalBandwidth: 300, normalDis: 1, worstDis: 1, avgRepair: 33, worstRepair: 33, downtime: 29, alternative: 'Data Backup', operational: 'heavy', latency: 100, peakUsage: 50, packetLoss: 0.5 },
+            { year: 3, topology: 'Star', avgDevices: 116, bndPerDept: 1, totalBandwidth: 300, normalDis: 1, worstDis: 1, avgRepair: 35, worstRepair: 35, downtime: 30, alternative: 'Data Backup', operational: 'heavy', latency: 100, peakUsage: 50, packetLoss: 0.5 },
+            { year: 4, topology: 'Star', avgDevices: 122, bndPerDept: 1, totalBandwidth: 300, normalDis: 1, worstDis: 1, avgRepair: 36, worstRepair: 36, downtime: 31, alternative: 'Data Backup', operational: 'heavy', latency: 100, peakUsage: 50, packetLoss: 0.5 },
+            { year: 5, topology: 'Star', avgDevices: 128, bndPerDept: 1, totalBandwidth: 300, normalDis: 1, worstDis: 1, avgRepair: 38, worstRepair: 38, downtime: 33, alternative: 'Data Backup', operational: 'heavy', latency: 106, peakUsage: 50, packetLoss: 0.5 },
+            { year: 6, topology: 'Star', avgDevices: 134, bndPerDept: 1.5, totalBandwidth: 457, normalDis: 1, worstDis: 2, avgRepair: 27, worstRepair: 40, downtime: 59, alternative: 'Data Backup', operational: 'heavy', latency: 111, peakUsage: 55, packetLoss: 0.62 },
+            { year: 7, topology: 'Star', avgDevices: 140, bndPerDept: 1.5, totalBandwidth: 457, normalDis: 1, worstDis: 3, avgRepair: 28, worstRepair: 49, downtime: 106, alternative: 'Data Backup', operational: 'heavy', latency: 114.4, peakUsage: 66, packetLoss: 0.75 },
+            { year: 8, topology: 'Star', avgDevices: 148, bndPerDept: 1.5, totalBandwidth: 457, normalDis: 1, worstDis: 3, avgRepair: 30, worstRepair: 59, downtime: 153, alternative: 'Data Backup', operational: 'heavy', latency: 117.9, peakUsage: 66, packetLoss: 0.89 },
+            { year: 9, topology: 'Star', avgDevices: 155, bndPerDept: 1.5, totalBandwidth: 457, normalDis: 1, worstDis: 4, avgRepair: 31, worstRepair: 70, downtime: 212, alternative: 'Data Backup', operational: 'heavy/very heavy', latency: 121.6, peakUsage: 72, packetLoss: 1.04 },
+            { year: 10, topology: 'Star', avgDevices: 169, bndPerDept: 2, totalBandwidth: 633, normalDis: 2, worstDis: 4, avgRepair: 24, worstRepair: 61, downtime: 211, alternative: 'Data Backup', operational: 'heavy/very heavy', latency: 125.4, peakUsage: 78, packetLoss: 1.2 },
+        ];
+
+        const labels = rawData.map(d => `Year ${d.year}`);
+        const lastYear = rawData[rawData.length - 1];
+
+        const linearRegression = (x, y) => {
+            const n = x.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+            for (let i = 0; i < n; i++) {
+                sumX += x[i];
+                sumY += y[i];
+                sumXY += x[i] * y[i];
+                sumX2 += x[i] * x[i];
+            }
+
+            const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const b = (sumY - m * sumX) / n;
+            return { m, b };
+        };
+
+        const getForecast = (key, forecastYears = 5, baseYears = 5) => {
+            const dataSlice = rawData.slice(-baseYears);
+            const x = dataSlice.map(d => d.year);
+            const y = dataSlice.map(d => d[key]);
+            const { m, b } = linearRegression(x, y);
+
+            const forecast = [];
+            for (let i = 1; i <= forecastYears; i++) {
+                const year = rawData.length + i;
+                const predictedValue = m * year + b;
+                forecast.push(parseFloat(predictedValue.toFixed(2)));
+            }
+            return forecast;
+        };
+
+        const createSummaryCard = (title, value, description, color = 'primary-blue') => `
+            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-${color} transition-transform duration-300 hover:scale-[1.02]">
+                <p class="text-sm font-semibold text-gray-500 uppercase">${title}</p>
+                <p class="mt-1 text-3xl font-bold text-gray-900">${value}</p>
+                <p class="mt-2 text-xs text-gray-400">${description}</p>
+            </div>
+        `;
+
+        const renderOverview = () => {
+            const downtimeInDays = (lastYear.downtime / 24).toFixed(1);
+            const totalBandwidthDisplay = `${lastYear.totalBandwidth} Mbps`;
+            const repairTime = `${lastYear.avgRepair} mins (Avg) / ${lastYear.worstRepair} mins (Worst)`;
+
+            return `
+                <div class="space-y-8">
+                    <h2 class="text-3xl font-bold text-gray-800">Network Overview (Year ${lastYear.year} Snapshot)</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        ${createSummaryCard("Total Bandwidth", totalBandwidthDisplay, "Total capacity of the establishment's network.", 'accent-green')}
+                        ${createSummaryCard("Total Devices", lastYear.avgDevices, "Total number of active devices on the network.", 'primary-blue')}
+                        ${createSummaryCard("Operational Level", lastYear.operational.toUpperCase(), "Current network traffic activity level.", lastYear.operational.includes('very heavy') ? 'accent-red' : 'primary-blue')}
+                        ${createSummaryCard("Current Latency", `${lastYear.latency} ms`, "Average time delay for data packets.", lastYear.latency > 120 ? 'accent-red' : 'primary-blue')}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-lg space-y-4">
+                            <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">Connectivity & Stability</h3>
+                            <ul class="text-gray-600 space-y-2">
+                                <li><span class="font-bold text-sm">Topology:</span> ${lastYear.topology}</li>
+                                <li><span class="font-bold text-sm">Bandwidth per Dept:</span> ${lastYear.bndPerDept} Mbps</li>
+                                <li><span class="font-bold text-sm">Weekly Disconnections (N/W):</span> ${lastYear.normalDis} / ${lastYear.worstDis}</li>
+                                <li><span class="font-bold text-sm">Alternative Connectivity:</span> ${lastYear.alternative}</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-lg space-y-4">
+                            <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">Maintenance & Downtime</h3>
+                            <ul class="text-gray-600 space-y-2">
+                                <li><span class="font-bold text-sm">Repair Time (Avg/Worst):</span> ${repairTime}</li>
+                                <li><span class="font-bold text-sm">Annual Downtime:</span> ${lastYear.downtime} Hours (${downtimeInDays} Days)</li>
+                                <li class="text-accent-red font-bold"><span class="text-sm">Packet Loss:</span> ${lastYear.packetLoss}%</li>
+                                <li class="text-accent-red font-bold"><span class="text-sm">Peak Usage:</span> ${lastYear.peakUsage}%</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const renderTrends = () => {
+            return `
+                <div class="space-y-8">
+                    <h2 class="text-3xl font-bold text-gray-800">Performance Trends (Year 1–10 Simulation)</h2>
+                    <p class="text-gray-600">The shift in bandwidth (Year 6 and Year 10) temporarily alleviated performance issues, but the core trends of increased latency, packet loss, and downtime suggest increasing strain.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-4 rounded-xl shadow-lg"><canvas id="latencyTrend"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"><canvas id="deviceGrowth"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"><canvas id="bandwidthGrowth"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"><canvas id="peakUsageTrend"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"><canvas id="packetLossTrend"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"><canvas id="downtimeTrend"></canvas></div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const initTrendsCharts = () => {
+            new Chart(document.getElementById('latencyTrend'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Avg Latency (ms)',
+                        data: rawData.map(d => d.latency),
+                        borderColor: '#1D4ED8',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Latency Trend (Year 1-10)' } } }
+            });
+
+            new Chart(document.getElementById('deviceGrowth'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Avg Devices Connected',
+                        data: rawData.map(d => d.avgDevices),
+                        backgroundColor: '#10B981',
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Device Growth Trend' } } }
+            });
+
+            new Chart(document.getElementById('bandwidthGrowth'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Bandwidth (Mbps)',
+                        data: rawData.map(d => d.totalBandwidth),
+                        backgroundColor: '#F59E0B',
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Total Bandwidth (Mbps)' } } }
+            });
+
+            new Chart(document.getElementById('peakUsageTrend'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Peak Usage (%)',
+                        data: rawData.map(d => d.peakUsage),
+                        borderColor: '#9333EA',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Peak Usage % Trend' } } }
+            });
+
+            new Chart(document.getElementById('packetLossTrend'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Packet Loss (%)',
+                        data: rawData.map(d => d.packetLoss),
+                        borderColor: '#DC2626',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Packet Loss Trend' } } }
+            });
+
+            new Chart(document.getElementById('downtimeTrend'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Downtime (Hours/Year)',
+                        data: rawData.map(d => d.downtime),
+                        borderColor: '#374151',
+                        backgroundColor: 'rgba(55, 65, 81, 0.2)',
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Downtime Hours Per Year' } } }
+            });
+        };
+
+        const renderReliability = () => {
+            const problematicYears = rawData.filter(d => d.downtime > 100 || d.worstDis >= 3 || d.packetLoss > 0.8).map(d => d.year).join(', ');
+
+            return `
+                <div class="space-y-8">
+                    <h2 class="text-3xl font-bold text-gray-800">Reliability & Stability Metrics</h2>
+                    <p class="text-gray-600">The metrics below highlight the increasing severity and cost of network failures, particularly in recent years.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-red-50 p-6 rounded-xl shadow-lg border-l-4 border-accent-red">
+                            <p class="text-sm font-semibold text-accent-red uppercase">Problematic Years</p>
+                            <p class="mt-1 text-4xl font-extrabold text-accent-red">${problematicYears || 'None'}</p>
+                            <p class="mt-2 text-sm text-gray-600">Years where Downtime exceeded 100 hrs or Worst-case Disconnections were 3+.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg col-span-2">
+                             <canvas id="disconnectionTrend"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-4 rounded-xl shadow-lg"><canvas id="repairTimeComparison"></canvas></div>
+                        <div class="bg-white p-4 rounded-xl shadow-lg"><canvas id="downtimeHeatmap"></canvas></div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const initReliabilityCharts = () => {
+            new Chart(document.getElementById('disconnectionTrend'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Normal Disconnections (per week)',
+                            data: rawData.map(d => d.normalDis),
+                            borderColor: '#1D4ED8',
+                            tension: 0.3,
+                            fill: false,
+                        },
+                        {
+                            label: 'Worst-case Disconnections (per week)',
+                            data: rawData.map(d => d.worstDis),
+                            borderColor: '#DC2626',
+                            tension: 0.3,
+                            fill: false,
+                        }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Weekly Disconnections Trend (Normal vs Worst-case)' } } }
+            });
+
+            new Chart(document.getElementById('repairTimeComparison'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Avg Repair Time (mins)',
+                            data: rawData.map(d => d.avgRepair),
+                            backgroundColor: '#10B981',
+                        },
+                        {
+                            label: 'Worst-case Repair Time (mins)',
+                            data: rawData.map(d => d.worstRepair),
+                            backgroundColor: '#F59E0B',
+                        }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Avg vs Worst-case Repair Time Comparison' } } }
+            });
+
+            const downtimeData = rawData.map(d => d.downtime);
+            const backgroundColors = downtimeData.map(d => d >= 150 ? '#DC2626' : (d >= 50 ? '#F59E0B' : '#1D4ED8'));
+
+            new Chart(document.getElementById('downtimeHeatmap'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Annual Downtime (Hours)',
+                        data: downtimeData,
+                        backgroundColor: backgroundColors,
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Annual Downtime by Year (Critical at >150hrs)' } } }
+            });
+        };
+
+        const renderForecasting = () => {
+            const forecastYears = 5;
+            const forecastLabels = Array.from({ length: forecastYears }, (_, i) => `Year ${lastYear.year + i + 1}`);
+
+            const latencyForecast = getForecast('latency', forecastYears);
+            const deviceForecast = getForecast('avgDevices', forecastYears);
+            const peakUsageForecast = getForecast('peakUsage', forecastYears);
+
+            const latencyPrediction = latencyForecast[1];
+            const devicePrediction = deviceForecast[1];
+            const peakPrediction = peakUsageForecast[1];
+
+            let overloadYear = 'N/A (>Y15)';
+            const overloadThreshold = 85;
+            for (let i = 0; i < peakUsageForecast.length; i++) {
+                if (peakUsageForecast[i] >= overloadThreshold) {
+                    overloadYear = forecastLabels[i];
+                    break;
+                }
+            }
+
+            return `
+                <div class="space-y-8">
+                    <h2 class="text-3xl font-bold text-gray-800">Predictive Modeling & Forecasting (Next ${forecastYears} Years)</h2>
+                    <p class="text-gray-600">Using linear regression based on the last 5 years of data to forecast critical performance indicators and identify early warning signs of network overload.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        ${createSummaryCard("Latency Forecast (Year 12)", `${latencyPrediction} ms`, `Prediction for Avg Latency in Year 12.`, 'accent-red')}
+                        ${createSummaryCard("Device Load Forecast (Year 12)", `${devicePrediction} Devices`, `Prediction for Avg Devices Connected in Year 12.`, 'primary-blue')}
+                        ${createSummaryCard("Peak Usage Prediction (Year 12)", `${peakPrediction}%`, `Prediction for Peak Usage % in Year 12.`, peakPrediction >= 80 ? 'accent-red' : 'primary-blue')}
+                    </div>
+
+                    <div class="bg-yellow-100 p-4 rounded-xl shadow-md border-l-4 border-yellow-500">
+                        <h3 class="text-xl font-semibold text-yellow-700">Early-Warning Indicator: Network Overload</h3>
+                        <p class="text-gray-700 mt-1">Based on the current trend, Peak Usage is predicted to exceed the critical <strong>${overloadThreshold}% overload threshold</strong> by **${overloadYear}** if no optimization changes are implemented.</p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl shadow-lg">
+                        <canvas id="latencyForecastChart"></canvas>
+                    </div>
+                </div>
+            `;
+        };
+
+        const initForecastingCharts = () => {
+            const forecastYears = 5;
+            const forecastLabels = Array.from({ length: forecastYears }, (_, i) => `Year ${lastYear.year + i + 1}`);
+            const historicalLabels = rawData.map(d => `Y${d.year}`);
+            const allLabels = [...historicalLabels, ...forecastLabels];
+
+            const latencyData = rawData.map(d => d.latency);
+            const latencyForecast = getForecast('latency', forecastYears);
+            const fullLatencyData = [...latencyData, ...latencyForecast];
+
+            const backgroundColors = fullLatencyData.map((val, index) => index >= latencyData.length ? 'rgba(220, 38, 38, 0.7)' : '#1D4ED8');
+            const pointColors = fullLatencyData.map((val, index) => index >= latencyData.length ? 'rgba(220, 38, 38, 1)' : '#1D4ED8');
+
+            new Chart(document.getElementById('latencyForecastChart'), {
+                type: 'line',
+                data: {
+                    labels: allLabels,
+                    datasets: [
+                        {
+                            label: 'Historical Latency (ms)',
+                            data: latencyData,
+                            borderColor: '#1D4ED8',
+                            backgroundColor: '#1D4ED8',
+                            pointBackgroundColor: '#1D4ED8',
+                            tension: 0.3,
+                            fill: false,
+                            borderDash: [0, 0],
+                            spanGaps: true,
+                        },
+                        {
+                            label: 'Forecasted Latency (ms)',
+                            data: [
+                                ...Array(latencyData.length - 1).fill(NaN),
+                                latencyData[latencyData.length - 1],
+                                ...latencyForecast
+                            ],
+                            borderColor: 'rgba(220, 38, 38, 0.7)',
+                            backgroundColor: 'rgba(220, 38, 38, 0.7)',
+                            pointBackgroundColor: 'rgba(220, 38, 38, 1)',
+                            tension: 0.3,
+                            fill: false,
+                            borderDash: [5, 5],
+                            spanGaps: true,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'Latency Trend & 5-Year Forecast' }
+                    },
+                    scales: {
+                        y: {
+                            min: 90,
+                            title: { display: true, text: 'Latency (ms)' }
+                        }
+                    }
+                }
+            });
+        };
+
+        const renderRecommendations = () => {
+            return `
+                <div class="space-y-8">
+                    <h2 class="text-3xl font-bold text-gray-800">Optimization Recommendations</h2>
+                    <p class="text-gray-600">Based on the negative trends in latency, packet loss, and downtime, the following strategic upgrades and policy changes are recommended to ensure network stability and scalability for the next decade.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-accent-green space-y-4">
+                            <h3 class="text-xl font-semibold text-accent-green">Suggested Network Upgrades</h3>
+                            <ul class="list-disc list-inside space-y-3 text-gray-700 ml-4">
+                                <li><strong>Bandwidth Increase:</strong> Increase total bandwidth from 633 Mbps to 1 Gbps (at minimum) by Year 11 to accommodate the predicted device growth and peak usage.</li>
+                                <li><strong>Topology Redundancy:</strong> Replace the single Star topology with a Hybrid-Star or Partial Mesh to eliminate single points of failure, which directly reduces worst-case disconnections and downtime hours.</li>
+                                <li><strong>Secondary ISP:</strong> Implement a secondary ISP line as an active-backup connection. This acts as an alternative connectivity solution (beyond just data backup) to significantly lower downtime hours.</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-primary-blue space-y-4">
+                            <h3 class="text-xl font-semibold text-primary-blue">Policy and Performance Optimizations</h3>
+                            <ul class="list-disc list-inside space-y-3 text-gray-700 ml-4">
+                                <li><strong>Network Segmentation (VLANs):</strong> Implement VLANs (Virtual Local Area Networks) to logically segment departments. This reduces broadcast domains, isolating traffic, and is critical for lowering the packet loss rate.</li>
+                                <li><strong>Load Balancing:</strong> Implement a Load Balancing solution (e.g., dedicated hardware or software) on the core switch or router to distribute traffic more evenly and reduce peak usage spikes.</li>
+                                <li><strong>QoS Policy:</strong> Introduce a Quality of Service (QoS) Policy to prioritize critical applications (e.g., VoIP, Database access) over non-essential traffic, which helps mitigate latency spikes.</li>
+                                <li><strong>Proactive Maintenance:</strong> Establish a policy for mandatory proactive hardware replacement every 5-7 years to address aging infrastructure that contributes to increased repair times and disconnections.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        let currentChartInstances = [];
+
+        const destroyCurrentCharts = () => {
+            currentChartInstances.forEach(chart => chart.destroy());
+            currentChartInstances = [];
+        };
+
+        const renderPage = (pageKey) => {
+            const contentDiv = document.getElementById('dashboard-content');
+            destroyCurrentCharts();
+
+            let htmlContent = '';
+            let initChartsFunction = null;
+
+            switch (pageKey) {
+                case 'overview':
+                    htmlContent = renderOverview();
+                    break;
+                case 'trends':
+                    htmlContent = renderTrends();
+                    initChartsFunction = initTrendsCharts;
+                    break;
+                case 'reliability':
+                    htmlContent = renderReliability();
+                    initChartsFunction = initReliabilityCharts;
+                    break;
+                case 'forecasting':
+                    htmlContent = renderForecasting();
+                    initChartsFunction = initForecastingCharts;
+                    break;
+                case 'recommendations':
+                    htmlContent = renderRecommendations();
+                    break;
+                default:
+                    htmlContent = renderOverview();
+            }
+
+            contentDiv.innerHTML = htmlContent;
+
+            if (initChartsFunction) {
+                setTimeout(() => {
+                    initChartsFunction();
+                }, 100);
+            }
+
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                if (tab.dataset.page === pageKey) {
+                    tab.classList.add('border-primary-blue', 'text-primary-blue');
+                    tab.classList.remove('border-transparent', 'text-gray-500');
+                } else {
+                    tab.classList.remove('border-primary-blue', 'text-primary-blue');
+                    tab.classList.add('border-transparent', 'text-gray-500');
+                }
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    const page = e.target.dataset.page;
+                    renderPage(page);
+                });
+            });
+
+            renderPage('overview');
+        });
+    </script>
+</body>
+</html>
